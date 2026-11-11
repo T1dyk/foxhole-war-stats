@@ -48,7 +48,7 @@ async function main() {
   const status = win
     ? `${TEAM[win].name} won on ${date(w.conquestEndTime)} after ${days(end - start)} days.`
     : start ? `Day ${days(end - start)} of the conquest, started ${date(start)}.` : 'The conquest has not started yet.';
-  $('lead').textContent = `${shardName(shard)}. ${status}`;
+  $('lead').textContent = `Shard ${shardName(shard)} · ${status}`;
   $('updated').textContent = `Snapshot from ${dateTime(latest.time)} (${ago(latest.time)}). Checked every 15 minutes.`;
 
   // KPIs
@@ -56,8 +56,9 @@ async function main() {
   const sum = (f) => maps.reduce((a, m) => a + f(m), 0);
   const vtC = sum((m) => m.vt.C), vtW = sum((m) => m.vt.W), scorched = sum((m) => m.scorchedVT);
   const needed = w.requiredVictoryTowns - scorched;
-  $('k-vt').textContent = `${vtC} – ${vtW}`;
-  $('k-vt-sub').textContent = `Colonials – Wardens · ${needed} needed to win${scorched ? ` (${scorched} scorched)` : ''}`;
+  $('k-vt').innerHTML = `<span class="score" aria-label="Colonials ${vtC}, Wardens ${vtW}">`
+    + `<span class="swatch c"></span>${vtC}<span class="sep">/</span><span class="swatch w"></span>${vtW}</span>`;
+  $('k-vt-sub').textContent = `Colonials / Wardens · ${needed} needed to win${scorched ? ` (${scorched} scorched)` : ''}`;
 
   const cc = sum((m) => m.cCas), wc = sum((m) => m.wCas);
   $('k-cc').textContent = fmt(cc);
@@ -94,14 +95,9 @@ async function main() {
   });
 
   // Rockets
-  const site = (k, label, extra) => `
-    <div class="kpi" style="background: var(--surface-2)">
-      <span class="label"><span class="swatch ${TEAM[k].cls}"></span>${label}</span>
-      <span class="value">${sum((m) => m.sites[k])}</span>
-      <span class="sub">${extra}</span>
-    </div>`;
-  $('sites').innerHTML = site('C', 'Colonial rocket sites', `${sum((m) => m.armed.C)} with a rocket loaded`)
-    + site('W', 'Warden rocket sites', `${sum((m) => m.armed.W)} with a rocket loaded`);
+  const site = (k) => `<span><span class="swatch ${TEAM[k].cls}"></span>${TEAM[k].name}: `
+    + `<strong>${sum((m) => m.sites[k])}</strong> (${sum((m) => m.armed[k])} loaded)</span>`;
+  $('sites').innerHTML = `<span><strong>Rocket sites now</strong></span>${site('C')}${site('W')}`;
   const events = war.events.slice().reverse();
   $('events').innerHTML = events.length
     ? events.slice(0, 30).map((e) => `
@@ -114,6 +110,9 @@ async function main() {
 
   // Regions
   const rows = maps.slice().sort((a, b) => (b.cCas + b.wCas) - (a.cCas + a.wCas));
+  // The rocket-site column is shown only once some region has a site.
+  const anySites = maps.some((m) => m.sites.C + m.sites.W > 0);
+  document.querySelector('th[data-col="sites"]').hidden = !anySites;
   $('regions').innerHTML = rows.map((m) => `
     <tr>
       <td class="name">${esc(m.label)}</td>
@@ -122,7 +121,7 @@ async function main() {
       <td class="num">${fmt(m.cCas)}</td>
       <td class="num">${fmt(m.wCas)}</td>
       <td class="num">${fmt(m.enlist)}</td>
-      <td class="num">${m.sites.C} / ${m.sites.W}</td>
+      ${anySites ? `<td class="num">${m.sites.C} / ${m.sites.W}</td>` : ''}
     </tr>`).join('');
 }
 

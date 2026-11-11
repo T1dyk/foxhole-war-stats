@@ -18,9 +18,10 @@
     <a class="tab" href="wars.html" aria-current="page">War archive</a>
     <div class="spacer"></div>
     <select id="shard" aria-label="Shard" hidden></select>
-    <button type="button" class="ghost-btn" id="theme" aria-pressed="false">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z"/></svg>
-      <span>Dark mode</span>
+    <button type="button" class="ghost-btn" id="theme" aria-label="Switch to dark mode">
+      <svg class="i-moon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z"/></svg>
+      <svg class="i-sun" hidden width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3"/></svg>
+      <span class="btn-text">Dark mode</span>
     </button>
   </div>
 </nav>
@@ -29,7 +30,6 @@
   <div class="wrap">
     <div class="hero-text">
       <h1>War archive</h1>
-      <div class="rule"></div>
       <p class="lead" id="lead">Every war the collector has recorded, and how rocket launches line up with who won.</p>
     </div>
     <p class="meta" id="updated"></p>

@@ -20,19 +20,20 @@ async function main() {
   const shard = await pickShard();
   const index = await load(`${shard}/index.json`);
   const wars = index.wars;
-  $('updated').textContent = `${shardName(shard)} · last check ${dateTime(index.updated)} (${ago(index.updated)})`;
+  $('updated').textContent = `Shard ${shardName(shard)} · last check ${dateTime(index.updated)} (${ago(index.updated)})`;
 
   const finished = wars.filter((w) => winnerKey(w.winner));
   const cWins = finished.filter((w) => w.winner === 'COLONIALS').length;
   const wWins = finished.length - cWins;
   $('k-n').textContent = wars.length;
-  $('k-n-sub').textContent = wars.length
-    ? `Wars ${wars[0].warNumber}–${wars[wars.length - 1].warNumber} · ${finished.length} finished`
-    : 'none yet';
+  const first = wars[0]?.warNumber, last = wars[wars.length - 1]?.warNumber;
+  const range = !wars.length ? 'none yet' : first === last ? `War ${first}` : `Wars ${first}–${last}`;
+  $('k-n-sub').textContent = wars.length ? `${range} · ${finished.length || 'none'} finished` : range;
   $('k-c').textContent = cWins;
   $('k-w').textContent = wWins;
-  $('k-c-sub').textContent = `${pct(cWins, finished.length)} of finished wars`;
-  $('k-w-sub').textContent = `${pct(wWins, finished.length)} of finished wars`;
+  const share = (n) => (finished.length ? `${pct(n, finished.length)} of finished wars` : 'no finished wars yet');
+  $('k-c-sub').textContent = share(cWins);
+  $('k-w-sub').textContent = share(wWins);
 
   // Wars with a launch difference: did the side with more launches win?
   const decided = finished.filter((w) => w.launches.C !== w.launches.W);
@@ -41,10 +42,15 @@ async function main() {
   $('k-edge-sub').textContent = decided.length
     ? `the side with more launches won ${edge} of ${decided.length} wars`
     : 'needs finished wars where one side launched more';
+  // Highlight this tile only once it has a real answer.
+  $('k-edge').parentElement.classList.toggle('feature', decided.length > 0);
 
   // Bar chart
+  const anyLaunches = wars.some((w) => w.launches.C + w.launches.W > 0);
   if (!wars.length) {
     $('bars').innerHTML = '<div class="empty">No wars recorded yet.</div>';
+  } else if (!anyLaunches) {
+    $('bars').innerHTML = '<div class="empty">No rocket launches recorded yet.</div>';
   } else {
     const max = niceMax(Math.max(1, ...wars.map((w) => Math.max(w.launches.C, w.launches.W))));
     const h = (v) => `${(v / max) * 100}%`;

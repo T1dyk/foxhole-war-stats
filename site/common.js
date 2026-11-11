@@ -49,9 +49,14 @@ export function initTheme() {
   const isDark = () => root.dataset.theme
     ? root.dataset.theme === 'dark'
     : matchMedia('(prefers-color-scheme: dark)').matches;
+  // The button shows the theme it switches to: a sun in dark mode, a moon in light mode.
   const sync = () => {
-    btn.setAttribute('aria-pressed', String(isDark()));
-    btn.querySelector('span').textContent = isDark() ? 'Light mode' : 'Dark mode';
+    const dark = isDark();
+    const label = dark ? 'Light mode' : 'Dark mode';
+    btn.setAttribute('aria-label', `Switch to ${label.toLowerCase()}`);
+    btn.querySelector('.btn-text').textContent = label;
+    btn.querySelector('.i-moon').toggleAttribute('hidden', dark);
+    btn.querySelector('.i-sun').toggleAttribute('hidden', !dark);
   };
   btn.addEventListener('click', () => {
     root.dataset.theme = isDark() ? 'light' : 'dark';

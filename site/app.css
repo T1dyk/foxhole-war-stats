@@ -57,7 +57,15 @@ h2 { font-size: 36px; line-height: 44px; }
 
 main .wrap { display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; }
+/* 4 tiles in one row, 2×2 on tablets, one column on phones: never a lone tile in a row. */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .kpis { grid-template-columns: 1fr; } }
+.score { display: inline-flex; align-items: center; gap: 10px; }
+.score .swatch { width: 14px; height: 14px; border-radius: 3px; }
+.score .sep { color: var(--ink-soft); }
+.sites-line { margin: 0; font-size: 14px; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.sites-line span { display: inline-flex; align-items: center; gap: 8px; }
 .kpi { background: var(--surface); border-radius: 15px; padding: 20px 24px; display: flex; flex-direction: column; gap: 6px; }
 .kpi.feature { background: var(--feature); color: var(--on-feature); }
 .kpi .label { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
@@ -126,4 +134,7 @@ footer.site p { margin: 0; }
   h1 { font-size: 48px; line-height: 58px; }
   .panel { padding: 20px; }
   nav.top a.tab { height: 52px; padding: 0 10px; }
+  nav.top .ghost-btn .btn-text { display: none; }
+  nav.top .ghost-btn { padding: 10px 12px; }
+  nav.top .wrap { flex-wrap: nowrap; }
 }
