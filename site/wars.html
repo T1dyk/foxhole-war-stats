@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>War Archive · Foxhole War Stats</title>
+<meta name="description" content="Every Foxhole war recorded by the collector: winner, duration, casualties and rocket launches.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23312d2a'/%3E%3Crect x='3' y='9' width='3' height='4' fill='%236c9a6f'/%3E%3Crect x='7' y='5' width='3' height='8' fill='%236cc3e3'/%3E%3Crect x='11' y='7' width='2' height='6' fill='%23f0cc71'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=Parisienne&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<nav class="top" aria-label="Sections">
+  <div class="wrap">
+    <a class="tab" href="./">Current war</a>
+    <a class="tab" href="wars.html" aria-current="page">War archive</a>
+    <div class="spacer"></div>
+    <select id="shard" aria-label="Shard" hidden></select>
+    <button type="button" class="ghost-btn" id="theme" aria-pressed="false">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z"/></svg>
+      <span>Dark mode</span>
+    </button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-text">
+      <h1>War archive</h1>
+      <div class="rule"></div>
+      <p class="lead" id="lead">Every war the collector has recorded, and how rocket launches line up with who won.</p>
+    </div>
+    <p class="meta" id="updated"></p>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section class="kpis" aria-label="Summary">
+      <div class="kpi">
+        <span class="label">Wars recorded</span>
+        <span class="value" id="k-n">—</span>
+        <span class="sub" id="k-n-sub"></span>
+      </div>
+      <div class="kpi">
+        <span class="label"><span class="swatch c"></span>Colonial wins</span>
+        <span class="value" id="k-c">—</span>
+        <span class="sub" id="k-c-sub"></span>
+      </div>
+      <div class="kpi">
+        <span class="label"><span class="swatch w"></span>Warden wins</span>
+        <span class="value" id="k-w">—</span>
+        <span class="sub" id="k-w-sub"></span>
+      </div>
+      <div class="kpi feature">
+        <span class="label">More launches → victory</span>
+        <span class="value" id="k-edge">—</span>
+        <span class="sub" id="k-edge-sub"></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Rocket launches per war</h2>
+          <p>Launch targets seen per faction; the winner is marked under each war.</p>
+        </div>
+        <div class="legend">
+          <span><span class="swatch c"></span>Colonials</span>
+          <span><span class="swatch w"></span>Wardens</span>
+        </div>
+      </div>
+      <div id="bars"></div>
+    </section>
+
+    <section class="panel">
+      <h2>All recorded wars</h2>
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">War</th>
+              <th scope="col">Winner</th>
+              <th scope="col" class="num">Duration</th>
+              <th scope="col" class="num">Colonial casualties</th>
+              <th scope="col" class="num">Warden casualties</th>
+              <th scope="col" class="num">Launches C / W</th>
+              <th scope="col" class="num">Impacts</th>
+              <th scope="col" class="num">Coverage</th>
+            </tr>
+          </thead>
+          <tbody id="wars"></tbody>
+        </table>
+      </div>
+      <p class="note">Coverage is the share of 15-minute checks that succeeded while the collector was watching the war. A war joined midway shows only what happened after recording began; its duration still comes from the API’s start and end times.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Older wars</h2>
+      <p>The War API has no history, so wars before recording started aren’t here. Population and outcome data for wars 63–111 exists in the archive published by <a href="https://foxholestats.com/data/">foxholestats.com</a>; it is not imported into this site.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Data: official <a href="https://github.com/clapfoot/warapi">Foxhole War API</a>, recorded every 15 minutes. Not affiliated with Siege Camp.</p>
+    <p>Built with help from Claude by Anthropic · Source code: <a id="source" href="https://github.com/">GitHub</a></p>
+  </div>
+</footer>
+
+<script type="module" src="wars.js"></script>
+</body>
+</html>

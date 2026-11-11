@@ -1,0 +1,49 @@
+name: Collect war data
+
+# Every 15 minutes, at odd minutes to stay away from the top-of-hour rush on GitHub's scheduler.
+# The War API itself caches for seconds; 15 minutes is deliberately gentle.
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out collector
+        uses: actions/checkout@v4
+
+      - name: Check out data branch
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: data
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Poll the War API
+        run: node collector/collect.mjs data
+
+      - name: Commit snapshot
+        working-directory: data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -q -m "snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push -q
+          fi

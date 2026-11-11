@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foxhole War Stats</title>
+<meta name="description" content="The current Foxhole World Conquest from the official War API: victory towns, casualties and rocket strikes, recorded every 15 minutes.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23312d2a'/%3E%3Crect x='3' y='9' width='3' height='4' fill='%236c9a6f'/%3E%3Crect x='7' y='5' width='3' height='8' fill='%236cc3e3'/%3E%3Crect x='11' y='7' width='2' height='6' fill='%23f0cc71'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=Parisienne&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<nav class="top" aria-label="Sections">
+  <div class="wrap">
+    <a class="tab" href="./" aria-current="page">Current war</a>
+    <a class="tab" href="wars.html">War archive</a>
+    <div class="spacer"></div>
+    <select id="shard" aria-label="Shard" hidden></select>
+    <button type="button" class="ghost-btn" id="theme" aria-pressed="false">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z"/></svg>
+      <span>Dark mode</span>
+    </button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-text">
+      <h1 id="title">Current war</h1>
+      <div class="rule"></div>
+      <p class="lead" id="lead">Loading the latest snapshot…</p>
+    </div>
+    <p class="meta" id="updated"></p>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section class="kpis" aria-label="Summary">
+      <div class="kpi">
+        <span class="label">Victory towns</span>
+        <span class="value" id="k-vt">—</span>
+        <span class="sub" id="k-vt-sub"></span>
+      </div>
+      <div class="kpi">
+        <span class="label"><span class="swatch c"></span>Colonial casualties</span>
+        <span class="value" id="k-cc">—</span>
+        <span class="sub" id="k-cc-sub"></span>
+      </div>
+      <div class="kpi">
+        <span class="label"><span class="swatch w"></span>Warden casualties</span>
+        <span class="value" id="k-wc">—</span>
+        <span class="sub" id="k-wc-sub"></span>
+      </div>
+      <div class="kpi feature">
+        <span class="label">Rocket launches this war</span>
+        <span class="value" id="k-rk">—</span>
+        <span class="sub" id="k-rk-sub"></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Victory towns held</h2>
+          <p>Towns that count toward victory, per faction. The dotted line is the number needed to win.</p>
+        </div>
+        <div class="legend">
+          <span><span class="line c"></span>Colonials</span>
+          <span><span class="line w"></span>Wardens</span>
+          <span><span class="line goal"></span>Needed</span>
+        </div>
+      </div>
+      <div class="chart" id="chart-vt"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Casualties per hour</h2>
+          <p>Change in total casualties between two snapshots, divided by the time between them.</p>
+        </div>
+        <div class="legend">
+          <span><span class="line c"></span>Colonials</span>
+          <span><span class="line w"></span>Wardens</span>
+        </div>
+      </div>
+      <div class="chart" id="chart-cas"></div>
+    </section>
+
+    <div class="two">
+      <section class="panel">
+        <h2>Rocket activity</h2>
+        <p>Rocket sites on the map right now, and every launch target and impact the collector has seen this war.</p>
+        <div class="kpis" id="sites"></div>
+        <ul class="events" id="events"></ul>
+        <p class="note">Launches are new Rocket Target icons, impacts are new Rocket Ground Zero icons. The map is checked every 15 minutes, so an icon that appears and disappears between two checks is missed. Treat the counts as a lower bound.</p>
+      </section>
+
+      <section class="panel">
+        <h2>What this page can’t show</h2>
+        <p>The War API doesn’t publish how many players each faction has online, so there is no population chart here. It also reports only the war in progress: earlier wars appear in the <a href="wars.html">archive</a> only from the moment this collector started recording.</p>
+        <p>Enlistments in the regions table are the API’s running total of soldiers who enlisted in that region, not the number online now.</p>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>Regions</h2>
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Region</th>
+              <th scope="col" class="num">Victory towns C / W</th>
+              <th scope="col" class="num">Towns C / W</th>
+              <th scope="col" class="num">Colonial casualties</th>
+              <th scope="col" class="num">Warden casualties</th>
+              <th scope="col" class="num">Enlistments</th>
+              <th scope="col" class="num">Rocket sites C / W</th>
+            </tr>
+          </thead>
+          <tbody id="regions"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Data: official <a href="https://github.com/clapfoot/warapi">Foxhole War API</a>, recorded every 15 minutes. Not affiliated with Siege Camp.</p>
+    <p>Built with help from Claude by Anthropic · Source code: <a id="source" href="https://github.com/">GitHub</a></p>
+  </div>
+</footer>
+
+<script type="module" src="current.js"></script>
+</body>
+</html>
