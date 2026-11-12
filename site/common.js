@@ -108,9 +108,11 @@ export function el(html) {
 export const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // Time-series line chart in SVG.
-// series: [{ label, cls: 'c' | 'w' | 'goal', points: [[time, value], ...] }]
-// xMin/xMax pin the time axis so stacked charts line up; points with a null value are skipped.
-export function lineChart(box, { series, height = 260, format = fmt, yMin, xMin, xMax }) {
+// series: [{ label, cls: 'c' | 'w' | 'goal' | 'total', axis?: 'right', points: [[time, value], ...] }]
+// Series with axis 'right' get their own scale on the right edge (rightFormat for its labels).
+// Both scales use four steps, so they share one set of gridlines.
+// xMin/xMax pin the time axis; points with a null value are skipped.
+export function lineChart(box, { series, height = 260, format = fmt, rightFormat = fmt, yMin, rightYMin, xMin, xMax }) {
   series = series.map((s) => ({ ...s, points: s.points.filter((p) => p[1] != null && !Number.isNaN(p[1])) }));
   const all = series.flatMap((s) => s.points);
   if (new Set(all.map((p) => p[0])).size < 2) {
@@ -120,25 +122,37 @@ export function lineChart(box, { series, height = 260, format = fmt, yMin, xMin,
   const draw = () => {
     const W = Math.max(box.clientWidth, 280);
     const H = height;
-    const pad = { l: 56, r: 12, t: 12, b: 28 };
+    const hasRight = series.some((s) => s.axis === 'right' && s.points.length);
+    const pad = { l: 56, r: hasRight ? 64 : 12, t: 12, b: 28 };
     const ts = all.map((p) => p[0]);
-    const vs = all.map((p) => p[1]);
     const t0 = xMin ?? Math.min(...ts), t1 = xMax ?? Math.max(...ts);
-    let v0 = yMin ?? Math.min(...vs), v1 = Math.max(...vs);
-    if (v1 === v0) { v1 += 1; v0 = Math.max(0, v0 - 1); }
-    const step = niceStep((v1 - v0) / 4);
-    v0 = Math.floor(v0 / step) * step;
-    v1 = Math.ceil(v1 / step) * step;
+    const scale = (list, min) => {
+      const vs = list.flatMap((s) => s.points.map((p) => p[1]));
+      if (!vs.length) return null;
+      let lo = min ?? Math.min(...vs), hi = Math.max(...vs);
+      if (hi === lo) { hi += 1; lo = Math.max(0, lo - 1); }
+      let step = niceStep((hi - lo) / 4);
+      lo = Math.floor(lo / step) * step;
+      while (lo + 4 * step < hi) step = niceStep(step * 1.01);
+      return { lo, step, hi: lo + 4 * step };
+    };
+    const left = scale(series.filter((s) => s.axis !== 'right'), yMin);
+    const right = hasRight ? scale(series.filter((s) => s.axis === 'right'), rightYMin) : null;
     const x = (t) => pad.l + ((t - t0) / (t1 - t0 || 1)) * (W - pad.l - pad.r);
-    const y = (v) => pad.t + (1 - (v - v0) / (v1 - v0)) * (H - pad.t - pad.b);
+    const yOf = (sc) => (v) => pad.t + (1 - (v - sc.lo) / (sc.hi - sc.lo)) * (H - pad.t - pad.b);
+    const yL = left ? yOf(left) : null, yR = right ? yOf(right) : null;
+    const yFor = (s) => (s.axis === 'right' ? yR : yL);
+    const fmtFor = (s) => (s.axis === 'right' ? rightFormat : format);
 
     let svg = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(series.map((s) => s.label).join(', '))} over time">`;
-    for (let v = v0; v <= v1 + step / 2; v += step) {
-      svg += `<line x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/>`;
-      svg += `<text x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${esc(format(v))}</text>`;
+    for (let i = 0; i <= 4; i++) {
+      const gy = pad.t + (1 - i / 4) * (H - pad.t - pad.b);
+      svg += `<line x1="${pad.l}" x2="${W - pad.r}" y1="${gy}" y2="${gy}" stroke="var(--grid)"/>`;
+      if (left) svg += `<text x="${pad.l - 8}" y="${gy + 4}" text-anchor="end">${esc(format(left.lo + i * left.step))}</text>`;
+      if (right) svg += `<text x="${W - pad.r + 8}" y="${gy + 4}" text-anchor="start">${esc(rightFormat(right.lo + i * right.step))}</text>`;
     }
     svg += `<line x1="${pad.l}" x2="${W - pad.r}" y1="${H - pad.b}" y2="${H - pad.b}" stroke="var(--axis)"/>`;
-    const ticks = Math.min(6, Math.max(2, Math.floor((W - pad.l) / 120)));
+    const ticks = Math.min(6, Math.max(1, Math.floor((W - pad.l - pad.r) / 110)));
     const short = t1 - t0 < 4 * 86400000; // under 4 days: show the hour too
     const seenLabels = new Set();
     for (let i = 0; i <= ticks; i++) {
@@ -158,6 +172,8 @@ export function lineChart(box, { series, height = 260, format = fmt, yMin, xMin,
       total: 'stroke="var(--ink)" stroke-width="2"',
     };
     for (const s of series) {
+      if (!s.points.length) continue;
+      const y = yFor(s);
       const pts = s.points.map((p) => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
       svg += `<polyline points="${pts}" fill="none" ${styles[s.cls]} stroke-linejoin="round"/>`;
     }
@@ -167,7 +183,7 @@ export function lineChart(box, { series, height = 260, format = fmt, yMin, xMin,
     const svgEl = box.querySelector('svg');
     const cursor = box.querySelector('.cursor');
     const readout = box.querySelector('.readout');
-    const main = series.find((s) => s.cls !== 'goal') || series[0];
+    const main = series.reduce((a, s) => (s.cls !== 'goal' && s.points.length > a.points.length ? s : a));
     svgEl.addEventListener('pointermove', (e) => {
       const r = svgEl.getBoundingClientRect();
       const px = ((e.clientX - r.left) / r.width) * W;
@@ -176,9 +192,11 @@ export function lineChart(box, { series, height = 260, format = fmt, yMin, xMin,
       for (const p of main.points) if (Math.abs(p[0] - t) < Math.abs(best[0] - t)) best = p;
       const cx = x(best[0]);
       cursor.setAttribute('x1', cx); cursor.setAttribute('x2', cx); cursor.setAttribute('visibility', 'visible');
-      const rows = series.map((s) => {
-        const p = s.points.find((q) => q[0] === best[0]) || s.points.reduce((a, q) => (Math.abs(q[0] - best[0]) < Math.abs(a[0] - best[0]) ? q : a));
-        return `<div>${esc(s.label)}: <strong>${esc(format(p[1]))}</strong></div>`;
+      const rows = series.filter((s) => s.points.length).map((s) => {
+        const p = s.points.reduce((a, q) => (Math.abs(q[0] - best[0]) < Math.abs(a[0] - best[0]) ? q : a));
+        // Don't pair a value from hours away with this moment (e.g. before Steam was recorded).
+        const value = Math.abs(p[0] - best[0]) <= 30 * 60000 ? fmtFor(s)(p[1]) : '—';
+        return `<div>${esc(s.label)}: <strong>${esc(value)}</strong></div>`;
       }).join('');
       readout.innerHTML = `<div>${dateTime(best[0])}</div>${rows}`;
       readout.style.display = 'block';
@@ -195,7 +213,7 @@ export function lineChart(box, { series, height = 260, format = fmt, yMin, xMin,
 function niceStep(raw) {
   const p = 10 ** Math.floor(Math.log10(raw || 1));
   const f = raw / p;
-  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
 }
 
 export function showError(err) {

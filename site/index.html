@@ -78,33 +78,19 @@
     </section>
 
     <section class="panel">
-      <div>
-        <h2>Online and casualties</h2>
-        <p>Both charts share the same time axis, so a rise in players can be read against the fighting below it.</p>
-      </div>
-      <div class="sub-chart">
-        <div class="panel-head">
-          <div>
-            <h3>Players online on Steam <span class="now" id="steam-now"></span></h3>
-            <p class="note">Everyone in Foxhole right now, all shards and both factions together. Steam doesn’t know which faction a player is on, so there is no split.</p>
-          </div>
-          <div class="legend"><span><span class="line total"></span>All players</span></div>
+      <div class="panel-head">
+        <div>
+          <h2>Online and casualties</h2>
+          <p>Players in Foxhole on Steam <span class="now" id="steam-now"></span> against each faction’s casualties per hour.</p>
         </div>
-        <div class="chart" id="chart-steam"></div>
-      </div>
-      <div class="sub-chart">
-        <div class="panel-head">
-          <div>
-            <h3>Casualties per hour</h3>
-            <p class="note">Change in total casualties between two snapshots, divided by the time between them.</p>
-          </div>
-          <div class="legend">
-            <span><span class="line c"></span>Colonials</span>
-            <span><span class="line w"></span>Wardens</span>
-          </div>
+        <div class="legend">
+          <span><span class="line total"></span>All players · left axis</span>
+          <span><span class="line c"></span>Colonial casualties/h · right</span>
+          <span><span class="line w"></span>Warden casualties/h · right</span>
         </div>
-        <div class="chart" id="chart-cas"></div>
       </div>
+      <div class="chart" id="chart-online"></div>
+      <p class="note">Steam counts everyone in the game, on every shard, without telling factions apart, so there is no per-faction online here. Casualties scale with how many soldiers a side has in the fight: when total online grows and one faction’s losses grow with it, that side most likely gained the players. Treat it as a rough hint. Casualties per hour are the change in total casualties between two snapshots, divided by the time between them.</p>
     </section>
 
     <div class="two">

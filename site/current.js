@@ -86,26 +86,17 @@ async function main() {
       { label: 'Needed', cls: 'goal', points: samples.map((s) => [s.time, w.requiredVictoryTowns - s.scorchedVictoryTowns]) },
     ],
   });
-  // Online and casualties share one time axis.
-  const axis = samples.length ? { xMin: samples[0].time, xMax: samples[samples.length - 1].time } : {};
+  // Online (left axis) and casualties per hour (right axis) in one chart.
   const steamNow = latest.steamPlayers;
-  $('steam-now').textContent = steamNow != null ? `· ${fmt(steamNow)} now` : '';
-  const steamPoints = samples.map((s) => [s.time, s.steamPlayers]);
-  if (steamPoints.filter((p) => p[1] != null).length < 2) {
-    $('chart-steam').innerHTML = '<div class="empty">Steam player counts are recorded from 12 Nov 2026. The line appears after two snapshots.</div>';
-  } else {
-    lineChart($('chart-steam'), {
-      ...axis, yMin: 0, height: 200,
-      series: [{ label: 'All players', cls: 'total', points: steamPoints }],
-    });
-  }
-  lineChart($('chart-cas'), {
-    ...axis, yMin: 0,
+  $('steam-now').textContent = steamNow != null ? `(${fmt(steamNow)} now)` : '';
+  lineChart($('chart-online'), {
+    yMin: 0, rightYMin: 0, height: 300,
+    rightFormat: (v) => `${fmt(v)}/h`,
     series: [
-      { label: 'Colonials', cls: 'c', points: ratePerHour(samples, 'colonialCasualties') },
-      { label: 'Wardens', cls: 'w', points: ratePerHour(samples, 'wardenCasualties') },
+      { label: 'All players', cls: 'total', points: samples.map((s) => [s.time, s.steamPlayers]) },
+      { label: 'Colonial casualties/h', cls: 'c', axis: 'right', points: ratePerHour(samples, 'colonialCasualties') },
+      { label: 'Warden casualties/h', cls: 'w', axis: 'right', points: ratePerHour(samples, 'wardenCasualties') },
     ],
-    format: (v) => `${fmt(v)}/h`,
   });
 
   // Rockets
