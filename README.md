@@ -26,6 +26,24 @@ GitHub Actions (every 15 min) ──> War API ──> data branch (JSON) <──
    changes. The pages read data from `raw.githubusercontent.com`, so data commits never
    trigger a Pages build.
 
+## Triggering the collector
+
+GitHub's scheduler is best effort and can skip most runs on a new repository, so the
+collector is also started from outside through GitHub's official `workflow_dispatch` API:
+
+```
+POST https://api.github.com/repos/<owner>/<repo>/actions/workflows/collect.yml/dispatches
+Authorization: Bearer <fine-grained token, this repo only, Actions: read and write>
+Accept: application/vnd.github+json
+X-GitHub-Api-Version: 2022-11-28
+
+{"ref":"main"}
+```
+
+A free cron service (for example cron-job.org) sends this every 15 minutes; GitHub answers `204`.
+The built-in schedule stays as a fallback. A run that starts less than 10 minutes after the
+previous snapshot exits without calling the War API, so the two triggers never double the load.
+
 ## Limits
 
 - The War API has no history and no per-faction player counts. This site shows only what

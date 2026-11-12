@@ -182,8 +182,17 @@ async function collectShard(shard, state, now) {
   return { shard: shard.id, war: war.warNumber, maps: maps.length, events: events.length };
 }
 
+// Two triggers can start this collector (an external cron and GitHub's own schedule).
+// A run that comes too soon after the previous snapshot exits without touching the API.
+const MIN_GAP_MS = Number(process.env.MIN_GAP_MINUTES ?? 10) * 60000;
+
 async function main() {
   const now = Date.now();
+  const previous = await readJson(path.join(DATA, 'shards.json'), null);
+  if (previous?.updated && now - previous.updated < MIN_GAP_MS) {
+    console.log(`Last snapshot was ${Math.round((now - previous.updated) / 60000)} min ago; skipping this run.`);
+    return;
+  }
   const stateFile = path.join(DATA, 'state.json');
   const state = await readJson(stateFile, {});
   state.etags ||= {}; state.cache ||= {}; state.shards ||= {};
