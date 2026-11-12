@@ -84,6 +84,7 @@ main .wrap { display: flex; flex-direction: column; gap: 32px; padding-bottom: 4
 .legend .line { width: 16px; height: 0; border-top: 3px solid; }
 .legend .line.c { border-color: var(--col-c); }
 .legend .line.w { border-color: var(--col-w); border-top-style: dashed; }
+.legend .line.total { border-color: var(--ink); }
 .legend .line.goal { border-color: var(--ink-soft); border-top-width: 1px; border-top-style: dashed; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 32px; }
 .note { font-size: 12px; line-height: 20px; color: var(--ink-soft); margin: 0; }
@@ -138,3 +139,8 @@ footer.site p { margin: 0; }
   nav.top .ghost-btn { padding: 10px 12px; }
   nav.top .wrap { flex-wrap: nowrap; }
 }
+
+h3 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 700; }
+h3 .now { font-weight: 300; margin-left: 8px; font-variant-numeric: tabular-nums; }
+.sub-chart { display: flex; flex-direction: column; gap: 16px; }
+.sub-chart + .sub-chart { border-top: 1px solid var(--line); padding-top: 24px; }

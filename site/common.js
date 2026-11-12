@@ -109,7 +109,9 @@ export const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '
 
 // Time-series line chart in SVG.
 // series: [{ label, cls: 'c' | 'w' | 'goal', points: [[time, value], ...] }]
-export function lineChart(box, { series, height = 260, format = fmt, yMin }) {
+// xMin/xMax pin the time axis so stacked charts line up; points with a null value are skipped.
+export function lineChart(box, { series, height = 260, format = fmt, yMin, xMin, xMax }) {
+  series = series.map((s) => ({ ...s, points: s.points.filter((p) => p[1] != null && !Number.isNaN(p[1])) }));
   const all = series.flatMap((s) => s.points);
   if (new Set(all.map((p) => p[0])).size < 2) {
     box.innerHTML = '<div class="empty">Not enough snapshots yet. The chart fills in as the collector runs every 15 minutes.</div>';
@@ -121,7 +123,7 @@ export function lineChart(box, { series, height = 260, format = fmt, yMin }) {
     const pad = { l: 56, r: 12, t: 12, b: 28 };
     const ts = all.map((p) => p[0]);
     const vs = all.map((p) => p[1]);
-    const t0 = Math.min(...ts), t1 = Math.max(...ts);
+    const t0 = xMin ?? Math.min(...ts), t1 = xMax ?? Math.max(...ts);
     let v0 = yMin ?? Math.min(...vs), v1 = Math.max(...vs);
     if (v1 === v0) { v1 += 1; v0 = Math.max(0, v0 - 1); }
     const step = niceStep((v1 - v0) / 4);
@@ -153,6 +155,7 @@ export function lineChart(box, { series, height = 260, format = fmt, yMin }) {
       c: 'stroke="var(--col-c)" stroke-width="3"',
       w: 'stroke="var(--col-w)" stroke-width="3" stroke-dasharray="8 5"',
       goal: 'stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="4 4"',
+      total: 'stroke="var(--ink)" stroke-width="2"',
     };
     for (const s of series) {
       const pts = s.points.map((p) => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');

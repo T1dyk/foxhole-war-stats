@@ -12,9 +12,10 @@ async function loadSamples(shard, war) {
   const files = await Promise.all(
     war.days.map((d) => load(`${shard}/samples/${war.warNumber}/${d}.json`).catch(() => null)),
   );
-  const fields = files.find(Boolean)?.sampleFields || [];
-  const rows = files.filter(Boolean).flatMap((f) => f.samples).sort((a, b) => a[0] - b[0]);
-  return rows.map((r) => Object.fromEntries(fields.map((f, i) => [f, r[i]])));
+  // Each day file names its own fields; fields added later are missing (undefined) in older rows.
+  return files.filter(Boolean)
+    .flatMap((f) => f.samples.map((r) => Object.fromEntries(f.sampleFields.map((name, i) => [name, r[i] ?? null]))))
+    .sort((a, b) => a.time - b.time);
 }
 
 // Casualties per hour from consecutive snapshots. Gaps longer than 2 h (collector outages)
@@ -85,8 +86,21 @@ async function main() {
       { label: 'Needed', cls: 'goal', points: samples.map((s) => [s.time, w.requiredVictoryTowns - s.scorchedVictoryTowns]) },
     ],
   });
+  // Online and casualties share one time axis.
+  const axis = samples.length ? { xMin: samples[0].time, xMax: samples[samples.length - 1].time } : {};
+  const steamNow = latest.steamPlayers;
+  $('steam-now').textContent = steamNow != null ? `· ${fmt(steamNow)} now` : '';
+  const steamPoints = samples.map((s) => [s.time, s.steamPlayers]);
+  if (steamPoints.filter((p) => p[1] != null).length < 2) {
+    $('chart-steam').innerHTML = '<div class="empty">Steam player counts are recorded from 12 Nov 2026. The line appears after two snapshots.</div>';
+  } else {
+    lineChart($('chart-steam'), {
+      ...axis, yMin: 0, height: 200,
+      series: [{ label: 'All players', cls: 'total', points: steamPoints }],
+    });
+  }
   lineChart($('chart-cas'), {
-    yMin: 0,
+    ...axis, yMin: 0,
     series: [
       { label: 'Colonials', cls: 'c', points: ratePerHour(samples, 'colonialCasualties') },
       { label: 'Wardens', cls: 'w', points: ratePerHour(samples, 'wardenCasualties') },

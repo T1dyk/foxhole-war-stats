@@ -27,7 +27,23 @@ export const SAMPLE_FIELDS = [
   'colonialVictoryTowns', 'wardenVictoryTowns', 'scorchedVictoryTowns',
   'colonialTowns', 'wardenTowns', 'colonialRocketSites', 'wardenRocketSites',
   'colonialArmedSites', 'wardenArmedSites',
+  // Players in Foxhole on Steam right now: all shards and both factions together.
+  'steamPlayers',
 ];
+
+const STEAM_URL = 'https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=505460';
+
+// Official Steam Web API, no key needed. Returns null when Steam doesn't answer.
+async function steamPlayers() {
+  try {
+    const res = await fetch(STEAM_URL, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body?.response?.result === 1 ? body.response.player_count : null;
+  } catch {
+    return null;
+  }
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -93,7 +109,7 @@ function prettyMap(name) {
   return name.replace(/Hex$/, '').replace(/([a-z])([A-Z])/g, '$1 $2');
 }
 
-async function collectShard(shard, state, now) {
+async function collectShard(shard, state, now, steam) {
   const war = await get(state, `${shard.api}/worldconquest/war`, summarizeWar);
   const mapNames = await get(state, `${shard.api}/worldconquest/maps`, (m) => m);
 
@@ -115,7 +131,7 @@ async function collectShard(shard, state, now) {
     now, Math.max(...maps.map((m) => m.day || 0)), sum((m) => m.cCas), sum((m) => m.wCas), sum((m) => m.enlist),
     sum((m) => m.vt.C), sum((m) => m.vt.W), sum((m) => m.scorchedVT),
     sum((m) => m.towns.C), sum((m) => m.towns.W), sum((m) => m.sites.C), sum((m) => m.sites.W),
-    sum((m) => m.armed.C), sum((m) => m.armed.W),
+    sum((m) => m.armed.C), sum((m) => m.armed.W), steam,
   ];
 
   // Rocket events: an icon seen for the first time becomes an event.
@@ -141,6 +157,7 @@ async function collectShard(shard, state, now) {
   const day = new Date(now).toISOString().slice(0, 10);
   const dayFile = path.join(dir, 'samples', String(war.warNumber), `${day}.json`);
   const daily = await readJson(dayFile, { sampleFields: SAMPLE_FIELDS, samples: [] });
+  daily.sampleFields = SAMPLE_FIELDS; // new fields are only ever appended, so older rows stay valid
   daily.samples.push(sample);
   await writeJson(dayFile, daily);
 
@@ -153,7 +170,7 @@ async function collectShard(shard, state, now) {
   await writeJson(warFile, record);
 
   await writeJson(path.join(dir, 'latest.json'), {
-    shard: shard.id, time: now, war,
+    shard: shard.id, time: now, war, steamPlayers: steam,
     maps: maps.map((m) => ({
       name: m.name, label: m.label, day: m.day, enlist: m.enlist, cCas: m.cCas, wCas: m.wCas,
       vt: m.vt, scorchedVT: m.scorchedVT, towns: m.towns, sites: m.sites, armed: m.armed,
@@ -197,10 +214,11 @@ async function main() {
   const state = await readJson(stateFile, {});
   state.etags ||= {}; state.cache ||= {}; state.shards ||= {};
 
+  const steam = await steamPlayers();
   const shardsSeen = [];
   for (const shard of SHARDS) {
     try {
-      const r = await collectShard(shard, state, now);
+      const r = await collectShard(shard, state, now, steam);
       shardsSeen.push(shard.id);
       console.log(JSON.stringify(r));
     } catch (err) {
