@@ -125,7 +125,6 @@ async function main() {
       <td class="num">${m.towns.C} / ${m.towns.W}</td>
       <td class="num">${fmt(m.cCas)}</td>
       <td class="num">${fmt(m.wCas)}</td>
-      <td class="num">${fmt(m.enlist)}</td>
       ${anySites ? `<td class="num">${m.sites.C} / ${m.sites.W}</td>` : ''}
     </tr>`).join('');
 }
